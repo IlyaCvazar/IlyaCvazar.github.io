@@ -1,43 +1,690 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Командный список задач</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Alba – надёжный мессенджер на RUTP</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(145deg, #e0eafc 0%, #cfdef3 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* основной контейнер – имитация экрана мобильного приложения, но адаптивно */
+    .app {
+      max-width: 550px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 32px;
+      box-shadow: 0 25px 45px -12px rgba(0,0,0,0.3);
+      overflow: hidden;
+      transition: all 0.2s ease;
+      height: 700px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* динамические экраны */
+    .screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 20px;
+      background: #f9fafc;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* заголовки */
+    h1, h2, h3 {
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eef2f6;
+    }
+
+    .header h2 {
+      font-size: 1.6rem;
+      background: linear-gradient(135deg, #2b3b4e, #1e2f3f);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #4f6f8f;
+      width: 36px;
+      height: 36px;
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+    }
+    .back-btn:hover { background: #eef2fa; }
+
+    /* формы */
+    .input-group {
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-weight: 500;
+      color: #2c3e44;
+      font-size: 0.85rem;
+    }
+    input, textarea {
+      padding: 12px 16px;
+      border: 1px solid #dfe6ed;
+      border-radius: 20px;
+      font-size: 1rem;
+      background: white;
+      transition: 0.2s;
+      outline: none;
+    }
+    input:focus, textarea:focus {
+      border-color: #6c8fb0;
+      box-shadow: 0 0 0 3px rgba(108,143,176,0.2);
+    }
+    button {
+      background: #2d4b6e;
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 8px;
+    }
+    button:hover {
+      background: #1e3b58;
+      transform: scale(0.98);
+    }
+    .link-btn {
+      background: transparent;
+      color: #2d4b6e;
+      box-shadow: none;
+      margin-top: 12px;
+    }
+    .link-btn:hover {
+      background: #eef2fa;
+      transform: none;
+    }
+
+    /* список чатов */
+    .chat-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: white;
+      padding: 12px 16px;
+      border-radius: 28px;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      border: 1px solid #eef2f6;
+    }
+    .chat-item:hover {
+      background: #f1f5f9;
+      transform: translateX(3px);
+    }
+    .avatar {
+      width: 48px;
+      height: 48px;
+      background: #cbdde9;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: #1f3a4b;
+      background: #e6edf4;
+    }
+    .chat-info {
+      flex: 1;
+    }
+    .chat-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    .last-msg {
+      font-size: 0.8rem;
+      color: #6f8faa;
+    }
+    .search-box {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 8px;
+    }
+    .search-box input {
+      flex: 1;
+    }
+
+    /* экран чата */
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 16px 0;
+      padding: 8px 4px;
+    }
+    .message {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 24px;
+      background: white;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      align-self: flex-start;
+      border: 1px solid #e2e8f0;
+    }
+    .message.own {
+      align-self: flex-end;
+      background: #dceafa;
+      border-color: #bdd4e7;
+    }
+    .message small {
+      font-size: 0.7rem;
+      color: #6b7f8e;
+      display: block;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .input-row input {
+      flex: 1;
+    }
+    /* настройки профиля */
+    .profile-avatar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .big-avatar {
+      width: 100px;
+      height: 100px;
+      background: #b9cfdf;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: 500;
+      color: #2c4b6e;
+    }
+    .danger-btn {
+      background: #aa4f4f;
+      margin-top: 20px;
+    }
+    .danger-btn:hover {
+      background: #8b3c3c;
+    }
+    .info-text {
+      font-size: 0.8rem;
+      text-align: center;
+      color: #5b7a9a;
+      margin-top: 10px;
+    }
+    hr {
+      margin: 16px 0;
+      border: none;
+      border-top: 1px solid #e2edf2;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📋 Список задач команды</h1>
-        
-        <!-- Форма добавления задачи -->
-        <div class="add-task-form">
-            <input type="text" id="taskInput" placeholder="Введите новую задачу...">
-            <input type="text" id="assigneeInput" placeholder="Кто выполняет?">
-            <button id="addButton">Добавить</button>
-        </div>
+<div class="app" id="app">
 
-        <!-- Фильтры и отмена -->
-        <div class="controls">
-            <div class="filters">
-                <button class="filter-btn active" data-filter="all">Все</button>
-                <button class="filter-btn" data-filter="active">Активные</button>
-                <button class="filter-btn" data-filter="completed">Выполненные</button>
-            </div>
-            <button id="undoButton" class="undo-btn" disabled>↩ Отменить</button>
-        </div>
-
-        <!-- Список задач -->
-        <ul id="taskList">
-            <!-- Задачи будут добавляться сюда через JavaScript -->
-        </ul>
-
-        <!-- Счётчик задач -->
-        <div class="task-counter">
-            <span id="taskCount">Задач: 0</span>
-        </div>
+  <!-- ЭКРАН АУТЕНТИФИКАЦИИ (общий контейнер: переключение вход/регистрация) -->
+  <div id="authScreen" class="screen">
+    <div class="header">
+      <h2>✨ Альба</h2>
+      <div style="width:36px;"></div>
     </div>
+    <div id="loginForm">
+      <h3>Вход в аккаунт</h3>
+      <div class="input-group"><label>Логин</label><input id="loginUsername" placeholder="username"></div>
+      <div class="input-group"><label>Пароль</label><input id="loginPassword" type="password"></div>
+      <button id="doLoginBtn">Войти</button>
+      <button class="link-btn" id="switchToRegBtn">Нет аккаунта? Зарегистрироваться</button>
+    </div>
+    <div id="regForm" class="hidden">
+      <h3>Регистрация</h3>
+      <div class="input-group"><label>Логин</label><input id="regUsername" placeholder="логин"></div>
+      <div class="input-group"><label>Пароль</label><input id="regPassword" type="password"></div>
+      <div class="input-group"><label>Возраст</label><input id="regAge" type="number" placeholder="18"></div>
+      <button id="doRegBtn">Зарегистрироваться</button>
+      <button class="link-btn" id="switchToLoginBtn">Уже есть аккаунт? Войти</button>
+    </div>
+  </div>
 
-    <script src="script.js"></script>
+  <!-- ЭКРАН ПРИВЯЗКИ ПОЧТЫ (после регистрации) -->
+  <div id="emailScreen" class="screen hidden">
+    <div class="header"><h2>📧 Привязка почты</h2><div></div></div>
+    <div class="input-group"><label>Email для восстановления</label><input id="emailInput" type="email" placeholder="example@alba.com"></div>
+    <button id="saveEmailBtn">Привязать</button>
+    <div class="info-text">Это нужно для восстановления пароля</div>
+  </div>
+
+  <!-- ГЛАВНЫЙ ЭКРАН (Список чатов) -->
+  <div id="mainScreen" class="screen hidden">
+    <div class="header">
+      <button class="back-btn" id="settingsBtn">⚙️</button>
+      <h2>Чаты</h2>
+      <div class="avatar" style="width:40px;height:40px;" id="currentUserAvatar">😊</div>
+    </div>
+    <div class="search-box">
+      <input type="text" id="searchIdInput" placeholder="Поиск по ID / логину">
+      <button id="searchUserBtn">🔍</button>
+    </div>
+    <div id="chatListContainer" class="chat-list">
+      <!-- динамические чаты -->
+    </div>
+  </div>
+
+  <!-- НАСТРОЙКИ ПРОФИЛЯ -->
+  <div id="settingsScreen" class="screen hidden">
+    <div class="header">
+      <button class="back-btn" id="backFromSettingsBtn">←</button>
+      <h2>Настройки</h2>
+      <div></div>
+    </div>
+    <div class="profile-avatar">
+      <div class="big-avatar" id="profileAvatar">😊</div>
+      <button id="changeAvatarBtn">Изменить аватарку</button>
+      <input type="file" id="avatarInput" accept="image/*" style="display:none">
+    </div>
+    <div class="input-group"><label>О себе (статус)</label><textarea id="aboutInput" rows="2" placeholder="Расскажите о себе..."></textarea></div>
+    <button id="saveProfileBtn">Сохранить</button>
+    <button id="deleteProfileBtn" class="danger-btn">Удалить профиль</button>
+  </div>
+
+  <!-- ЭКРАН ЧАТА (диалог) -->
+  <div id="chatScreen" class="screen hidden">
+    <div class="header">
+      <button class="back-btn" id="backFromChatBtn">←</button>
+      <h2 id="chatPartnerName">Собеседник</h2>
+      <div style="width:36px;"></div>
+    </div>
+    <div id="messagesContainer" class="messages-area"></div>
+    <div class="input-row">
+      <input type="text" id="messageInput" placeholder="Введите сообщение...">
+      <button id="sendMsgBtn">Отправить</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ---------- Инициализация данных (localStorage) ----------
+  let currentUser = null;          // { username, password, age, email?, about, avatar }
+  let chats = [];                  // массив контактов, с которыми есть диалог (id, name, lastMsg)
+  let messagesDB = {};             // { "username1_username2": [ {text, from, time} ] }
+  let selectedChatUser = null;
+
+  // предзагрузка демо-контактов (для красоты)
+  function initDemoUsers() {
+    let users = JSON.parse(localStorage.getItem('alba_users') || '[]');
+    if (users.length === 0) {
+      users = [
+        { username: "alice", password: "123", age: 24, email: "alice@alba.com", about: "Книголюб", avatar: "🐱" },
+        { username: "bob", password: "123", age: 30, email: "bob@alba.com", about: "Разработчик", avatar: "🤖" }
+      ];
+      localStorage.setItem('alba_users', JSON.stringify(users));
+      // предустановим сообщения
+      if(!localStorage.getItem('alba_msgs')) {
+        let msgs = {};
+        msgs["current_alice"] = [{ from: "alice", text: "Привет! Как дела?", time: Date.now()-3600000 }, { from: "current", text: "Отлично, изучаю RUTP!", time: Date.now()-3500000 }];
+        msgs["current_bob"] = [{ from: "bob", text: "Готовим презентацию", time: Date.now()-7200000 }];
+        localStorage.setItem('alba_msgs', JSON.stringify(msgs));
+      }
+    }
+  }
+  initDemoUsers();
+
+  // сохранить пользователей
+  function saveUsers(users) { localStorage.setItem('alba_users', JSON.stringify(users)); }
+  function getUsers() { return JSON.parse(localStorage.getItem('alba_users') || '[]'); }
+  function saveMessages(obj) { localStorage.setItem('alba_msgs', JSON.stringify(obj)); }
+  function getMessages() { return JSON.parse(localStorage.getItem('alba_msgs') || '{}'); }
+
+  // вспомогательные функции
+  function generateChatId(userA, userB) { return [userA, userB].sort().join('_'); }
+
+  function addMessage(toUser, fromUser, text) {
+    let msgs = getMessages();
+    let key = generateIdForMessages(currentUser.username, toUser);
+    if (!msgs[key]) msgs[key] = [];
+    msgs[key].push({ from: fromUser, text: text, time: Date.now() });
+    saveMessages(msgs);
+  }
+  function generateIdForMessages(u1, u2) { return [u1, u2].sort().join('_'); }
+
+  function getChatsWithLastMsg() {
+    if (!currentUser) return [];
+    let users = getUsers();
+    let msgs = getMessages();
+    let contactsSet = new Set();
+    for (let key in msgs) {
+      let parts = key.split('_');
+      if (parts[0] === currentUser.username || parts[1] === currentUser.username) {
+        let other = parts[0] === currentUser.username ? parts[1] : parts[0];
+        contactsSet.add(other);
+      }
+    }
+    // добавим для демо всех пользователей, кроме себя, для удобства (можно создавать чат поиском)
+    let allOthers = users.filter(u => u.username !== currentUser.username).map(u => u.username);
+    allOthers.forEach(u => contactsSet.add(u));
+    let contacts = Array.from(contactsSet);
+    let chatList = contacts.map(contact => {
+      let userObj = users.find(u => u.username === contact);
+      let key = generateIdForMessages(currentUser.username, contact);
+      let last = msgs[key]?.[msgs[key].length-1];
+      return {
+        id: contact,
+        name: contact,
+        lastMsg: last ? (last.from === currentUser.username ? "Вы: " + last.text : last.from+": "+last.text) : "Новый чат",
+        avatar: userObj?.avatar || "👤"
+      };
+    });
+    return chatList;
+  }
+
+  function renderChatList() {
+    const container = document.getElementById('chatListContainer');
+    if (!container) return;
+    let chatList = getChatsWithLastMsg();
+    container.innerHTML = '';
+    chatList.forEach(chat => {
+      let div = document.createElement('div');
+      div.className = 'chat-item';
+      div.innerHTML = `
+        <div class="avatar">${chat.avatar}</div>
+        <div class="chat-info">
+          <div class="chat-name">${escapeHtml(chat.name)}</div>
+          <div class="last-msg">${escapeHtml(chat.lastMsg)}</div>
+        </div>
+      `;
+      div.addEventListener('click', () => openChat(chat.id));
+      container.appendChild(div);
+    });
+  }
+
+  function openChat(username) {
+    selectedChatUser = username;
+    const partner = getUsers().find(u => u.username === username);
+    document.getElementById('chatPartnerName').innerText = partner ? partner.username : username;
+    renderMessages();
+    showScreen('chatScreen');
+  }
+
+  function renderMessages() {
+    let container = document.getElementById('messagesContainer');
+    if (!container || !selectedChatUser || !currentUser) return;
+    let msgs = getMessages();
+    let key = generateIdForMessages(currentUser.username, selectedChatUser);
+    let messages = msgs[key] || [];
+    container.innerHTML = '';
+    messages.forEach(msg => {
+      let div = document.createElement('div');
+      div.className = `message ${msg.from === currentUser.username ? 'own' : ''}`;
+      let timeStr = new Date(msg.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      div.innerHTML = `<div><strong>${msg.from === currentUser.username ? 'Я' : msg.from}</strong>: ${escapeHtml(msg.text)}</div><small>${timeStr}</small>`;
+      container.appendChild(div);
+    });
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function sendMessage() {
+    let input = document.getElementById('messageInput');
+    let text = input.value.trim();
+    if (!text || !selectedChatUser || !currentUser) return;
+    addMessage(selectedChatUser, currentUser.username, text);
+    input.value = '';
+    renderMessages();
+    renderChatList(); // обновить последнее сообщение в списке
+  }
+
+  // Навигация
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById(screenId).classList.remove('hidden');
+  }
+
+  // загрузка данных профиля в настройки
+  function loadProfileToSettings() {
+    if (!currentUser) return;
+    document.getElementById('aboutInput').value = currentUser.about || '';
+    let avatarDiv = document.getElementById('profileAvatar');
+    avatarDiv.innerText = currentUser.avatar || '😊';
+    document.getElementById('currentUserAvatar').innerText = currentUser.avatar || '😊';
+  }
+
+  function saveProfile() {
+    let about = document.getElementById('aboutInput').value;
+    currentUser.about = about;
+    let users = getUsers();
+    let idx = users.findIndex(u => u.username === currentUser.username);
+    if (idx !== -1) users[idx] = currentUser;
+    saveUsers(users);
+    loadProfileToSettings();
+    alert('Профиль сохранён');
+  }
+
+  function changeAvatar() {
+    document.getElementById('avatarInput').click();
+  }
+
+  // удаление профиля и выход
+  function deleteProfile() {
+    if (!confirm('Удалить профиль безвозвратно?')) return;
+    let users = getUsers();
+    let newUsers = users.filter(u => u.username !== currentUser.username);
+    saveUsers(newUsers);
+    // чистим сообщения, где участвовал пользователь (опционально)
+    let msgs = getMessages();
+    for(let key in msgs) {
+      if(key.includes(currentUser.username)) delete msgs[key];
+    }
+    saveMessages(msgs);
+    logout();
+  }
+
+  function logout() {
+    currentUser = null;
+    showScreen('authScreen');
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
+  }
+
+  function handleLogin() {
+    let username = document.getElementById('loginUsername').value.trim();
+    let password = document.getElementById('loginPassword').value;
+    let users = getUsers();
+    let user = users.find(u => u.username === username && u.password === password);
+    if (user) {
+      currentUser = user;
+      loadProfileToSettings();
+      renderChatList();
+      showScreen('mainScreen');
+    } else {
+      alert('Неверный логин или пароль');
+    }
+  }
+
+  function handleRegister() {
+    let username = document.getElementById('regUsername').value.trim();
+    let password = document.getElementById('regPassword').value;
+    let age = document.getElementById('regAge').value;
+    if (!username || !password || !age) { alert('Заполните все поля'); return; }
+    let users = getUsers();
+    if (users.find(u => u.username === username)) { alert('Пользователь уже существует'); return; }
+    let newUser = { username, password, age, about: '', avatar: '🌟' };
+    users.push(newUser);
+    saveUsers(users);
+    currentUser = newUser;
+    // после регистрации показываем привязку почты
+    showScreen('emailScreen');
+    document.getElementById('emailInput').value = '';
+  }
+
+  function bindEmail() {
+    let email = document.getElementById('emailInput').value.trim();
+    if (!email) { alert('Введите email'); return; }
+    let users = getUsers();
+    let idx = users.findIndex(u => u.username === currentUser.username);
+    if (idx !== -1) {
+      users[idx].email = email;
+      currentUser.email = email;
+      saveUsers(users);
+    }
+    loadProfileToSettings();
+    renderChatList();
+    showScreen('mainScreen');
+  }
+
+  function searchUser() {
+    let query = document.getElementById('searchIdInput').value.trim().toLowerCase();
+    if (!query) return;
+    let users = getUsers();
+    let found = users.find(u => u.username.toLowerCase() === query && u.username !== currentUser.username);
+    if (found) {
+      openChat(found.username);
+    } else {
+      alert('Пользователь не найден');
+    }
+  }
+
+  // обработчики и инициализация событий
+  function initEventListeners() {
+    document.getElementById('doLoginBtn').onclick = handleLogin;
+    document.getElementById('switchToRegBtn').onclick = () => { document.getElementById('loginForm').classList.add('hidden'); document.getElementById('regForm').classList.remove('hidden'); };
+    document.getElementById('switchToLoginBtn').onclick = () => { document.getElementById('regForm').classList.add('hidden'); document.getElementById('loginForm').classList.remove('hidden'); };
+    document.getElementById('doRegBtn').onclick = handleRegister;
+    document.getElementById('saveEmailBtn').onclick = bindEmail;
+    document.getElementById('settingsBtn').onclick = () => { loadProfileToSettings(); showScreen('settingsScreen'); };
+    document.getElementById('backFromSettingsBtn').onclick = () => showScreen('mainScreen');
+    document.getElementById('backFromChatBtn').onclick = () => showScreen('mainScreen');
+    document.getElementById('sendMsgBtn').onclick = sendMessage;
+    document.getElementById('messageInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+    document.getElementById('saveProfileBtn').onclick = saveProfile;
+    document.getElementById('changeAvatarBtn').onclick = changeAvatar;
+    document.getElementById('deleteProfileBtn').onclick = deleteProfile;
+    document.getElementById('avatarInput').onchange = (e) => {
+      let file = e.target.files[0];
+      if(file) {
+        let reader = new FileReader();
+        reader.onload = function(ev) {
+          // просто эмодзи-заглушка, т.к. полноценное изображение усложнит, но можно положить в localStorage. для демо установим эмодзи 📸
+          currentUser.avatar = '🖼️';
+          let users = getUsers();
+          let idx = users.findIndex(u => u.username === currentUser.username);
+          if (idx !== -1) users[idx].avatar = '🖼️';
+          saveUsers(users);
+          loadProfileToSettings();
+          renderChatList();
+          alert('Аватар изменён на 🖼️');
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    document.getElementById('searchUserBtn').onclick = searchUser;
+  }
+
+  function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+  // старт приложения — проверяем, был ли уже залогинен (опционально)
+  window.onload = () => {
+    initEventListeners();
+    showScreen('authScreen');
+    // проверим сессию (localStorage)
+    let lastUser = localStorage.getItem('alba_last_user');
+    if(lastUser) {
+      let users = getUsers();
+      let maybe = users.find(u => u.username === lastUser);
+      if(maybe) {
+        currentUser = maybe;
+        loadProfileToSettings();
+        renderChatList();
+        showScreen('mainScreen');
+      }
+    }
+  };
+  // сохранять последнего пользователя после логина
+  const origHandleLogin = handleLogin;
+  window.handleLogin = function() { origHandleLogin(); if(currentUser) localStorage.setItem('alba_last_user', currentUser.username); };
+  window.handleLogin = handleLogin;
+  // переопределим handleLogin
+  handleLogin = function() { 
+    let un = document.getElementById('loginUsername').value.trim();
+    let pw = document.getElementById('loginPassword').value;
+    let users = getUsers();
+    let user = users.find(u => u.username === un && u.password === pw);
+    if (user) {
+      currentUser = user;
+      localStorage.setItem('alba_last_user', currentUser.username);
+      loadProfileToSettings();
+      renderChatList();
+      showScreen('mainScreen');
+    } else alert('Неверный логин или пароль');
+  };
+  window.handleRegister = function() {
+    let username = document.getElementById('regUsername').value.trim();
+    let password = document.getElementById('regPassword').value;
+    let age = document.getElementById('regAge').value;
+    if (!username || !password || !age) { alert('Заполните все поля'); return; }
+    let users = getUsers();
+    if (users.find(u => u.username === username)) { alert('Пользователь уже существует'); return; }
+    let newUser = { username, password, age, about: '', avatar: '🌟' };
+    users.push(newUser);
+    saveUsers(users);
+    currentUser = newUser;
+    localStorage.setItem('alba_last_user', currentUser.username);
+    showScreen('emailScreen');
+  };
+  document.getElementById('doLoginBtn').onclick = () => handleLogin();
+  document.getElementById('doRegBtn').onclick = () => window.handleRegister();
+  document.getElementById('saveEmailBtn').onclick = bindEmail;
+</script>
 </body>
 </html>
