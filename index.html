@@ -129,16 +129,6 @@
                     </ul>
                     <a href="#" class="btn btn-primary">GitHub проекта →</a>
                 </div>
-                <div class="tech-code">
-                    <pre><code># Пример отправки данных через RUTP
-from rutp import RUTPConnection
-
-async def send_msg():
-    conn = RUTPConnection(loop)
-    await conn.connect('alba-node', 9000)
-    conn.send(b'Привет, мир RUTP!')
-    await conn.close()</code></pre>
-                </div>
             </div>
         </section>
 
